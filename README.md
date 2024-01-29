@@ -26,6 +26,7 @@ Join the [Discord server](https://discord.com/invite/ejUc6YPQuS).
  * C or F2 = Capture screenshot
 
 (Alt/Option can be used in place of Shift)
+(All controls can be rebinded in settings)
 
 # Button Info
  * Pause           =  Pause/play the simulation
