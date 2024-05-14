@@ -1,35 +1,36 @@
 window.addEventListener("load", () => { 
     document.getElementById("elementButton-mask_head")?.remove()
 })
-
 window.addEventListener("load", () => { 
     document.getElementById("elementButton-mask_body")?.remove()
 })
-
+window.addEventListener("load", () => { 
+    document.getElementById("elementButton-infected_skin")?.remove()
+})
+window.addEventListener("load", () => { 
+    document.getElementById("elementButton-infected_meat")?.remove()
+})
+window.addEventListener("load", () => { 
+    document.getElementById("elementButton-frozen_infected_meat")?.remove()
+})
 window.addEventListener("load", () => { 
     document.getElementById("elementButton-zombie")?.remove()
 })
-
 window.addEventListener("load", () => { 
     document.getElementById("elementButton-z_head")?.remove()
 })
-
 window.addEventListener("load", () => { 
     document.getElementById("elementButton-z_body")?.remove()
 })
-
 window.addEventListener("load", () => { 
     document.getElementById("elementButton-REDACTED")?.remove()
 })
-
 window.addEventListener("load", () => { 
     document.getElementById("elementButton-hyper_tickle_monster")?.remove()
 })
-
 window.addEventListener("load", () => { 
     document.getElementById("elementButton-calm_682")?.remove()
 })
-
 window.addEventListener("load", () => { 
     document.getElementById("elementButton-mad_682")?.remove()
 })
@@ -57,17 +58,22 @@ elements.SCP_008 = {
     reactions: {
         "head": { elem1:null, elem2:"z_head" , chance:0.5 },
         "body": { elem1:null, elem2:"z_body" , chance:0.5 },
+	"skin": { elem1:null, elem2: ["infected_skin","infected_skin","infected_meat"] , chance:0.3 },
+	"blood": { elem1:null, elem2:"infection" , chance:0.6 },
+	"meat": { elem1:null, elem2:"infected_meat" , chance:0.4 },
+	"rotten_meat": { elem1:null, elem2:"infected_meat" , chance:0.5 },
+	"frozen_meat": { elem1:null, elem2:"frozen_infected_meat" , chance:0.3 },
         "frog": { elem2:"SCP_008" , chance:0.5 },
         "ant": { elem2:"SCP_008" , chance:0.5 },
         "bee": { elem2:"SCP_008" , chance:0.5 },
         "fish": { elem2:"SCP_008" , chance:0.5 },
         "firefly": { elem2:"SCP_008" , chance:0.5 },
-        "chlorine": { elem1: [null,null,null,null,"anomalous_essence"] , chance:0.01 },
-        "liquid_chlorine": { elem1: [null,null,null,null,"anomalous_essence"] , chance:0.01 },
-        "light": { elem1: [null,null,null,null,"anomalous_essence"] , chance:0.01 },
+        "chlorine": { elem1: [null,null,null,null,null,null,null,null,"anomalous_essence"] , chance:0.01 },
+        "liquid_chlorine": { elem1: [null,null,null,null,null,null,null,null,"anomalous_essence"] , chance:0.01 },
+        "light": { elem1: [null,null,null,null,null,null,null,null,"anomalous_essence"] , chance:0.01 },
     },
-    tempHigh: 1000,
-    stateHigh: [null,null,null,null,"anomalous_essence"],
+    tempHigh: 750,
+    stateHigh: [null,null,null,null,null,null,null,null,"anomalous_essence"],
     tempLow: -100,
     stateLow: "frozen_008",
     category: "scp",
@@ -80,14 +86,19 @@ elements.frozen_008 = {
     behavior: [
         "XX|XX|XX",
         "XX|DL%0.001|X",
-        "M2%1.0|M1%1.0|M2%1.0",
+        "XX|M1%1.0|XX",
     ],
     reactions: {
         "head": { elem1:null, elem2:"z_head" , chance:0.4 },
         "body": { elem1:null, elem2:"z_body" , chance:0.4 },
-        "chlorine": { elem1: [null,null,null,null,"anomalous_essence"] , chance:0.01 },
-        "liquid_chlorine": { elem1: [null,null,null,null,"anomalous_essence"] , chance:0.01 },
-        "light": { elem1: [null,null,null,null,"anomalous_essence"] , chance:0.01 },
+	"skin": { elem1:null, elem2:"frozen_infected_meat" , chance:0.4 },
+	"blood": { elem1:null, elem2:"infection" , chance:0.6 },
+	"meat": { elem1:null, elem2:"frozen_infected_meat" , chance:0.4 },
+	"rotten_meat": { elem1:null, elem2:"frozen_infected_meat" , chance:0.5 },
+	"frozen_meat": { elem1:null, elem2:"frozen_infected_meat" , chance:0.4 },
+        "chlorine": { elem1: [null,null,null,null,null,null,null,null,"anomalous_essence"] , chance:0.01 },
+        "liquid_chlorine": { elem1: [null,null,null,null,null,null,null,null,"anomalous_essence"] , chance:0.01 },
+        "light": { elem1: [null,null,null,null,null,null,null,null,"anomalous_essence"] , chance:0.01 },
     },
     temp: -50,
     tempHigh: 0,
@@ -95,6 +106,131 @@ elements.frozen_008 = {
     category: "scp",
     state: "solid",
     density: 95,
+},
+	
+elements.infected_skin = {
+    color: ["#11111f","#75816B","#4D6B53"],
+    singleColor: true,
+    behavior: [
+        "XX|CR:stench,stench,stench,SCP_008,fly%0.05 AND CH:meat>infected_meat%1|XX",
+        "CH:meat>infected_meat%1|XX|CH:meat>infected_meat%1",
+        "M2%1.0|M1%1.0 AND CH:meat>infected_meat%1|M2%1.0",
+    ],
+    tick: function(pixel) {
+        if (pixel.temp > 40 && Math.random() < 0.003) {
+            for (var i = 0; i < adjacentCoords.length; i++) {
+                var coords = adjacentCoords[i];
+                var x = pixel.x + coords[0];
+                var y = pixel.y + coords[1];
+                if (isEmpty(x,y)) {
+                    pixel.temp -= 20;
+                    createPixel("infection",x,y)
+                    break;
+                }
+            }
+        }
+        if (pixel.temp < 36 && Math.random() < 0.1) {
+            pixel.temp += 1;
+        }
+        doDefaults(pixel);
+    },
+    reactions: {
+        "cell": { chance:0.01, func:function(pixel1,pixel2){
+            changePixel(pixel2,"infected_skin");
+            pixel2.color = pixelColorPick(pixel2,RGBToHex(pixel1.color.match(/\d+/g)))
+            if (pixel1.origColor) { pixel2.origColor = pixel1.origColor }
+        } },
+	"skin": { chance:0.01, func:function(pixel1,pixel2){
+            changePixel(pixel2,"infected_skin");
+            pixel2.color = pixelColorPick(pixel2,RGBToHex(pixel1.color.match(/\d+/g)))
+            if (pixel1.origColor) { pixel2.origColor = pixel1.origColor }
+	} },
+	"blood": { elem2:"infection" , chance:0.6 },
+        "acid": { elem1:"infection" },
+        "soap": { elem1:null, elem2:null, chance:0.005 },
+        "light": { stain1:"#825043" },
+        "poison": { stain1:"#cc564b" },
+        "poison_gas": { stain1:"#cc564b" },
+        "infection": { stain1:"#cc564b" },
+        "pollen": { stain1:"#cc564b" },
+        "dust": { stain1:"#cc564b" },
+        "flea": { stain1:"#cc564b" },
+        "mushroom_spore": { stain1:"#cc564b" },
+        "mushroom_stalk": { stain1:"#cc564b" },
+        "chlorine": { stain1:"#cc564b" },
+        "quicklime": { stain1:"#cc564b" },
+    },
+    category:"solids",
+    breakInto: [null,null,"SCP_008","infection","dust"],
+    temp: 37,
+    tempHigh: 200,
+    stateHigh: ["cooked_meat","cooked_meat","cooked_meat","SCP_008"],
+    tempLow: -18,
+    stateLow: "frozen_008_meat",
+    burn:5,
+    burnTime:400,
+    burnInto: ["cooked_meat","cooked_meat","SCP_008"],
+    state: "solid",
+    density: 1010,
+    conduct: 0.04,
+    movable: false,
+},
+	    
+elements.infected_meat = {
+    color: ["#b8b165","#b89765"],
+    behavior: [
+        "XX|CR:stench,stench,stench,SCP_008,fly%0.25 AND CH:rotten_meat,meat>infected_meat%1|XX",
+        "SP%99 AND CH:rotten_meat,meat>infected_meat%1|XX|SP%99 AND CH:rotten_meat,meat>infected_meat%1",
+        "XX|M1 AND CH:rotten_meat,meat>infected_meat%1|XX",
+    ],
+    reactions: {
+        "water": { elem2:"dirty_water" },
+        "salt_water": { elem2:"dirty_water" },
+        "sugar_water": { elem2:"dirty_water" },
+        "dirty_water": { elem2:"broth", tempMin:70, color2:"#d7db69" },
+        "seltzer": { elem2:"dirty_water" },
+	"fly": { elem1: [null,null,"SCP_008"] , elem2: ["dead_bug","dead_bug","SCP_008"] , chance:0.2},
+	"blood": { elem2:"infection" , chance:0.6 },
+	"skin": { elem2:"infected_skin" , chance:0.6 },
+    },
+    tempHigh: 300,
+    stateHigh: ["SCP_008","ash","ammonia"],
+    tempLow: -20,
+    stateLow: "frozen_infected_meat",
+    category:"scp",
+    hidden: true,
+    burn:12,
+    burnTime:200,
+    burnInto:["SCP_008","ash","ammonia"],
+    state: "solid",
+    density: 1005,
+    conduct: 0.1,
+    isFood: true
+},
+
+elements.frozen_infected_meat = {
+    color: "#242424",
+    behavior: [
+        "XX|CH:rotten_meat,frozen_meat>frozen_infected_meat%1|XX",
+        "SP%99 AND CH:rotten_meat,frozen_meat>frozen_infected_meat%1|XX|SP%99 AND CH:rotten_meat,frozen_meat>frozen_infected_meat%1",
+        "XX|M1 AND CH:rotten_meat,frozen_meat>frozen_infected_meat%1|XX",
+    ],
+    reactions: {
+        "water": { elem2:"dirty_water" },
+        "salt_water": { elem1:"infected_meat",elem2:"dirty_water" , chance:0.5 },
+        "sugar_water": { elem2:"dirty_water" },
+        "seltzer": { elem2:"dirty_water" },
+	"fly": { elem2: ["dead_bug","dead_bug","SCP_008"] , chance:0.2},
+	"blood": { elem2:"infection" , chance:0.6 },
+    },
+    temp: -20,
+    tempHigh: 10,
+    stateHigh: "infected_meat",
+    category:"scp",
+    hidden: true,
+    state: "solid",
+    density: 1005,
+    conduct: 0.05,
 },
 
 elements.possessive_mask = {
@@ -253,7 +389,6 @@ elements.mask_head = {
     burnTime: 250,
     burnInto: "possessive_mask",
     breakInto: "possessive_mask",
-    forceSaveColor: true,
     reactions: {
         "cancer": { elem1: "possessive_mask", chance:0.05 },
         "tea": { elem2:null, chance:0.2 },
@@ -377,7 +512,7 @@ elements.black_acid = {
     tempLow: -58.88,
     burn: 30,
     burnTime: 10,
-    burnInto: ["fire","fire","fire","fire","fire","fire","fire","fire","ash","ash","anomalous_essence"],
+    burnInto: ["fire","fire","fire","fire","fire","fire","fire","fire","ash","ash","fire","fire","fire","fire","ash","ash","anomalous_essence"],
     fireColor: "#111111",
     state: "liquid",
     density: 1105,
@@ -395,7 +530,7 @@ elements.SCP_055 = {
     category: "scp",
     state: "solid",
     tempHigh: 55055055055,
-    stateHigh: ["metal_scrap","smoke","smoke","anomalous_essence"],
+    stateHigh: ["metal_scrap","metal_scrap","smoke","smoke","smoke","smoke","smoke","smoke","smoke",null,"anomalous_essence"],
 },
 
 elements.REDACTED = {
@@ -409,6 +544,7 @@ elements.REDACTED = {
     ],
     category: "scp",
     state: "solid",
+    movable: false,
 },
 
 elements.plague_doctor = {
@@ -429,6 +565,7 @@ elements.plague_doctor = {
             createPixel("doc_head", pixel.x, pixel.y-1);
             pixelMap[pixel.x][pixel.y-1].color = pixel.color;
             pixel.element = "doc_body";
+            pixel.color = pixelColorPick(pixel)
         }   
         else {
             deletePixel(pixel.x, pixel.y);
@@ -593,7 +730,6 @@ elements.doc_body = {
     burn: .01,
     burnTime: 300,
     burnInto: "rotten_meat",
-    forceSaveColor: true,
     reactions: {
 		"head": { elem2 : "z_head" , chance:0.3},
         "body": { elem2 : "z_body" , chance:0.3},
@@ -821,7 +957,7 @@ elements.shy_head = {
     hidden: true,
 	color: ["#f7ead0","#faf9f6","#e9e6db"],
     category: "scp",
-	breakInto: ["bone","bone","blood","bone","bone","blood","anomalous_essence"],
+	breakInto: ["bone","bone","blood","bone","bone","blood","bone","bone","blood","bone","bone","blood","anomalous_essence"],
 	properties: {
         dead: false
     },
@@ -855,7 +991,7 @@ elements.shy_head = {
                     pixel.dead = pixelTicks;
                 }
             }
-        }
+	}
         // homeostasis
         if (pixel.temp > 37) { pixel.temp -= 1; }
         else if (pixel.temp < 37) { pixel.temp += 1; }
@@ -869,12 +1005,13 @@ elements.shy_head = {
     burnTime: 3000,
     burnInto: "bone",
     reactions: {
-		"homunculus": { elem2 : ["blood","slime","blood","slime","rotten_meat",null] },
-		"head": { elem2 : ["blood","blood","blood","bone",null] },
-		"body": { elem2: ["blood","blood","meat","bone",null] },
+	"homunculus": { elem2 : ["blood","slime","blood","slime","rotten_meat",null] },
+	"head": { elem2 : ["blood","blood","blood","bone",null] },
+	"body": { elem2: ["blood","blood","meat","bone",null] },
+	"z_head": { elem2 : ["infection","infection","infection","bone",null] },
+	"z_body": { elem2: ["infection","infection","rotten_meat","bone",null] },
         "rat": { elem2: ["infection","rotten_meat",null]},
         "frog": { elem2: ["slime",null] },
-        "cell": { elem2: ["dna","water",null] },
         "cancer": { elem2: ["dna","dirty_water",null], },
         "blood": { elem2: null, chance:0.2 },
         "bone": { elem2: null, chance:0.2 },
@@ -889,7 +1026,7 @@ elements.shy_body = {
     hidden: true,
 	color: ["#f7ead0","#faf9f6","#e9e6db"],
     category: "scp",
-	 breakInto: ["bone","bone","blood","bone","bone","blood","anomalous_essence"],
+	 breakInto: ["bone","bone","blood","bone","bone","blood","bone","bone","blood","bone","bone","blood","anomalous_essence"],
 	 properties: {
         dead: false,
         dir: 1,
@@ -986,10 +1123,12 @@ elements.shy_body = {
     burnInto: "bone",
     forceSaveColor: true,
     reactions: {
-		"homunculus": { elem2 : ["blood","slime","blood","slime","rotten_meat",null] },
-		"head": { elem2 : ["blood","blood","blood","meat","bone",null] },
-		"body": { elem2: ["blood","blood","meat","bone",null] },
-        "rat": { elem2: ["infection","rotten_meat"]},
+	"homunculus": { elem2 : ["blood","slime","blood","slime","rotten_meat",null] },
+	"head": { elem2 : ["blood","blood","blood","bone",null] },
+	"body": { elem2: ["blood","blood","meat","bone",null] },
+	"z_head": { elem2 : ["infection","infection","infection","bone",null] },
+	"z_body": { elem2: ["infection","infection","rotten_meat","bone",null] },
+	"rat": { elem2: ["infection","infection","plague"] },
         "frog": { elem2: "slime" },
         "cell": { elem2: ["dna","water",null] },
         "cancer": { elem2: ["dna","dirty_water"] },
@@ -1001,17 +1140,18 @@ elements.SCP_682 = {
     color: ["#424242","#75816B","#4D6B53"],
     behavior: [
         "M2%0.5|M2%0.3|M2%0.5",
-        "M1%10|XX|M1%10",
+        "M2%10|XX|M2%10",
         "XX|M1|XX",
     ],
     category: "scp",
     density: 7500,
     reactions: {
-        "head": { elem2 : ["bone","blood",null] , chance:10 },
-        "body": { elem1 : "mad_682" , elem2 : ["meat","blood",null] , chance:10 },
-        "z_head": { elem2 : ["bone","infection",null] , chance:10 },
-        "z_body": { elem1 : "mad_682" , elem2 : ["rotten_meat","infection",null] , chance:10 },
-        "homunculus": { elem2 : ["slime","blood",null] , chance:10 },
+        "head": { elem2 : ["bone","blood",null] , chance:50 },
+        "body": { elem1 : "mad_682" , elem2 : ["meat","blood",null] , chance:50 },
+        "z_head": { elem2 : ["infection","infection","infection","bone",null] , chance:50 },
+	"z_body": { elem1 : "mad_682" , elem2: ["infection","infection","rotten_meat","bone",null] , chance:50 },  
+	"homunculus": { elem2 : ["slime","blood",null] , chance:10 },
+	"rat": { elem2: ["infection","infection","plague"] },
         "frog": { elem2 : ["slime","blood",null] , chance:10 },
         "bird": { elem2 : ["feather","blood",null] , chance:10 },
         "meat": { elem2 : null , chance:0.2 },
@@ -1063,7 +1203,7 @@ elements.mad_682 = {
     color: ["#424242","#75816B","#4D6B53"],
     behavior: [
         "M2%0.5|M2%0.3|M2%0.5",
-        "M1%10 AND CH:concrete>dust AND DL:dust|CH:SCP_682%0.3|M1%10 AND CH:concrete>dust AND DL:dust",
+        "M2%10|CH:SCP_682%0.3|M2%10",
         "XX|M1|XX",
     ],
     category: "scp",
@@ -1072,6 +1212,8 @@ elements.mad_682 = {
     reactions: {
         "head": { elem2 : ["bone","blood",null] },
         "body": { elem2 : ["meat","blood",null] },
+	"z_head": { elem2 : ["bone","infection",null] },
+        "z_body": { elem2 : ["meat","infection",null] },
         "homunculus": { elem2 : ["slime","blood",null] },
         "frog": { elem2 : ["slime","blood",null] },
         "bird": { elem2 : ["feather","blood",null] },
@@ -1087,8 +1229,8 @@ elements.mad_682 = {
         "lead": { elem2 : ["metal_scrap","metal_scrap","radiation"] , chance:0.3 },
         "glass": { elem2 : "glass_shard" },
         "wood": { elem2 : "sawdust" },
-        "concrete": { elem2 : "dust" , chance:0.1 },
-        "dust": { elem2 : null , chance:0.1 },
+        "concrete": { elem2 : "dust" , chance:10 },
+        "dust": { elem2 : null , chance:10 },
     },
     hidden: true,
     state: "solid",
