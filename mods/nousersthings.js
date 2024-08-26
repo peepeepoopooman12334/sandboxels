@@ -307,11 +307,6 @@ elements.technetium = {
 },
 elements.destroyable_pipe = {
     color: "#414c4f",
-    onSelect: function() {
-        if(!enabledMods.contains("mods/nousersthings.js")){
-            logMessage("credit to nousersthings.js for this element")
-        }
-    },
     tick: function(pixel) {
         if (!pixel.stage && pixelTicks-pixel.start > 60) {
             for (var i = 0; i < squareCoords.length; i++) {
@@ -436,7 +431,7 @@ elements.destroyable_superheater = {
     category:"machines",
 	stateLow:["iron","copper"],
 	tempLow: -7,
-	breakInto:["metal_scrap","oxidixed_copper"],
+	breakInto:["metal_scrap","oxidized_copper"],
 },
 elements.destroyable_heater = {
     color: "#881111",
@@ -448,7 +443,7 @@ elements.destroyable_heater = {
     category:"machines",
 	stateLow:["iron","copper"],
 	tempLow: -7,
-	breakInto:["metal_scrap","oxidixed_copper"],
+	breakInto:["metal_scrap","oxidized_copper"],
 },
 elements.destroyable_cooler = {
     color: "#111188",
@@ -460,7 +455,7 @@ elements.destroyable_cooler = {
     category:"machines",
 	stateHigh:["iron","copper"],
 	tempHigh: 49,
-	breakInto:["metal_scrap","oxidixed_copper"],
+	breakInto:["metal_scrap","oxidized_copper"],
 },
 elements.destroyable_freezer = {
     color: "#1111dd",
@@ -1487,6 +1482,7 @@ elements.heat_test = {
 		}
 	},
 },
+/*
 elements.soup = {
 	color: "#3d2812",
 	behavior: behaviors.LIQUID,
@@ -1537,6 +1533,7 @@ elements.soup = {
 elements.broth.onMix = function(pixel){
 	changePixel(pixel, "soup")
 },
+*/
 converter1Var = 0;
 converter2Var = 0;
 elements.converter = {
@@ -1661,6 +1658,7 @@ elements.molten_plutonium = {
 	category: "states",
 	state: "liquid",
 	tempLow: 620,
+    hidden: true,
 	stateLow: "plutonium",
 	tick: function(pixel){
         if(Math.random() < 0.0007){
@@ -1865,6 +1863,7 @@ function HSVtoRGB(h, s, v) {
 elements.molten_bismuth = {
     color: ["#ee8d63", "#ef7e5e", "#f06e5c", "#f05c5c"],
     behavior: behaviors.MOLTEN,
+    hidden: true,
     category: "states",
     state: "liquid",
     temp: 280,
@@ -2317,7 +2316,7 @@ elements.element_filler = {
     }
 } 
 var outlinerVar = 0
-elements.outliner = {
+elements.inner_outliner = {
     color: elements.filler.color,
     category: elements.filler.category,
     excludeRandom: true,
@@ -2514,8 +2513,9 @@ elements.solid_diamond = {
     tempHigh: elements.diamond.tempHigh,
     stateHigh: elements.diamond.stateHigh,
     state: "solid",
-    denisty: elements.diamond.density,
-    hardness: elements.diamond.hardness
+    density: elements.diamond.density,
+    hardness: elements.diamond.hardness,
+    behavior: behaviors.WALL,
 }
 elements.textured_rose_gold = {
     color: ["#FF5991", "#E4386F", "#7F1037", "#FFCCCD", "#671133"],
@@ -2573,45 +2573,48 @@ elements.selective_void = {
         }
     }
 } 
-let radiusVar = 0
-let circleElem = 0
-let circleRep = false
+let circleElem = "wood"
 elements.scuffed_circle_brush = {
     category: "special",
     color: elements.drag.color,
     excludeRandom: true,
     state: "solid",
     movable: false,
-    maxSize: 1,
     onSelect: function(){
-        var answerR = prompt("Radius of the brush. Things above 10 may be laggy.",(radiusVar||undefined));
-        if (!answerR) { return }
-		radiusVar = answerR;
 		var answerE = prompt("Element of the brush.",(circleElem||undefined));
         if (!answerE) { return }
-		circleElem = answerE;
-        var answerH = prompt("Replace? True or false. May be laggy.",(circleRep||undefined));
-        if (!answerH) { answerH = false }
-		circleRep = answerH;
+		circleElem = mostSimilarElement(answerE);
     },
     tick: function(pixel){
-        var circlec = circleCoords(pixel.x, pixel.y, radiusVar)
-        for (var i = 0; i < circlec.length; i++){
-            var coord = circlec[i]
-            var x = coord.x
-            var y = coord.y
-            if (isEmpty(x, y)){
-                createPixel(circleElem, x, y)
-            }
-            else if (circleRep && !outOfBounds(x, y)){
-                deletePixel(x, y)
-                createPixel(circleElem, x, y)
-            }
+        let radius = mouseSize/2
+        //pyhtagoreas time
+        if (Math.sqrt(Math.pow(pixel.x-mousePos.x,2)+Math.pow(pixel.y-mousePos.y,2)) < radius) {
+            deletePixel(pixel.x, pixel.y)
+            createPixel(circleElem, pixel.x, pixel.y)
+        } else {
+            deletePixel(pixel.x, pixel.y)
+        } 
+    }
+}
+elements.scuffed_triangle_brush = {
+    category: "special",
+    color: elements.drag.color,
+    excludeRandom: true,
+    state: "solid",
+    movable: false,
+    onSelect: function(){
+		var answerE = prompt("Element of the brush.",(circleElem||undefined));
+        if (!answerE) { return }
+		circleElem = mostSimilarElement(answerE);
+    },
+    tick: function(pixel){
+        let radius = mouseSize/2
+        if ((pixel.y - mousePos.y + mouseSize > 2 * (pixel.x - mousePos.x) + 0.5 * mouseSize) && (pixel.y - mousePos.y + mouseSize > -2 * (pixel.x - mousePos.x) + 0.5 * mouseSize)) {
+            deletePixel(pixel.x, pixel.y)
+            createPixel(circleElem, pixel.x, pixel.y)
+        } else {
+            deletePixel(pixel.x, pixel.y)
         }
-        var thisx = pixel.x
-        var thisy = pixel.y
-        deletePixel(thisx, thisy)
-        createPixel(circleElem, thisx, thisy)
     }
 }
 function randomIntFromInterval(min, max) { // min and max included 
@@ -2685,9 +2688,9 @@ elements.healing_serum = {
                     pixel.waitReduce = true
                 }
                 if (pixel.wait == 0){
-                    if (!pixel.elementsSeen[pixelMap[x][y].element] && pixelMap[x][y].element != "healing_serum"){
+                    if (!pixel.elementsSeen[pixelMap[x][y].element] && !(["healing_serum", "bless", "experience"].includes(pixelMap[x][y].element))){
                         pixel.elementsSeen[pixelMap[x][y].element] = 1
-                    } else if (pixelMap[x][y].element != "healing_serum") {
+                    } else if (!(["healing_serum", "bless", "experience"].includes(pixelMap[x][y].element))) {
                         pixel.elementsSeen[pixelMap[x][y].element] += 1
                     }
                 }
@@ -2797,6 +2800,12 @@ elements.ray = {
         if (pixel.life < pixel.maxLife){
             pixel.color = "rgba("+pixel.rgb[0]+","+pixel.rgb[1]+","+pixel.rgb[2]+","+(pixel.life/pixel.maxLife)+")"
         } else {pixel.color = "rgba("+pixel.rgb[0]+","+pixel.rgb[1]+","+pixel.rgb[2]+",1)"}
+        // lightmap.js integration
+        if (enabledMods.includes("mods/lightmap.js")){
+            let x = Math.floor(pixel.x / lightmapScale);
+            let y = Math.floor(pixel.y / lightmapScale);
+            lightmap[y][x] = { color: [parseInt(pixel.rgb[0])*((pixel.life/pixel.maxLife)), parseInt(pixel.rgb[1])*((pixel.life/pixel.maxLife)), parseInt(pixel.rgb[2])*((pixel.life/pixel.maxLife))]};
+        }
         if (pixel.life <= 0){
             deletePixel(pixel.x, pixel.y)
         }
@@ -2824,6 +2833,7 @@ elements.specific_ray_emitter = {
         var rayans = prompt("Please input the desired element of this ray emitter",(rayElement||undefined));
         if (!rayans) { return }
 		rayElement = mostSimilarElement(rayans);
+        if (rayElement != "ray"){rainbowMode = false}
         var rayans2 = prompt("Should the ray be stopped by walls? Write true or false.",(rayStoppedByWalls||false));
         if (rayans2 == "false"){rayStoppedByWalls = false} else {rayStoppedByWalls = true}
         var rayans3 = prompt("How much should the beginning of the ray be offset from the emitter?", (specificRayStart||0));
@@ -2842,7 +2852,7 @@ elements.specific_ray_emitter = {
         if (!rayans6) { return }
         stopAtElement = mostSimilarElement(rayans6)
         let rayans7
-        if (rayans == "ray"){ rayans7 = prompt("How long should the ray stay on screen in ticks?", (rayLife||10));}
+        if (rayans == "ray"){ rayans7 = prompt("How long should the ray stay on screen in ticks?", (rayLife||10));
         if (!rayans7) { return }
         if (isNaN(parseFloat(rayans7))){
             rayLife = 10
@@ -2851,6 +2861,7 @@ elements.specific_ray_emitter = {
         }
         var rayans8 = prompt("Would you like rainbow mode to be enabled? Type yes or no.", (rainbowMode||"no"));
         if (rayans8 == "yes"){rainbowMode = true} else {rainbowMode = false}
+        }
     },
     hoverStat: function(pixel){
         return (pixel.rayElement.toUpperCase() || "unset") + ", " + (pixel.rayStoppedByWalls.toString().toUpperCase() || "unset") + ", " + (pixel.specificRayStart || "unset") + ", " + (pixel.specificRayEnd || "unset") + ", " + (pixel.specificRayAngle || "unset")
@@ -2872,16 +2883,16 @@ elements.specific_ray_emitter = {
         pixel.rgb[0] = parseInt(pixel.rgb[0])
         pixel.rgb[1] = parseInt(pixel.rgb[1])
         pixel.rgb[2] = parseInt(pixel.rgb[2])
-        console.log(pixel.rgb)
+        //console.log(pixel.rgb)
         var hsvResult = RGBtoHSV(pixel.rgb[0], pixel.rgb[1], pixel.rgb[2]);
             pixel.tHue = hsvResult.h;
             var rgbResult = HSVtoRGB(pixel.tHue + (1/360), 1, 1);
-            console.log(rgbResult)
+            //console.log(rgbResult)
             const hexR = rgbResult.r.toString(16).padStart(2, '0');
             const hexG = rgbResult.g.toString(16).padStart(2, '0');
             const hexB = rgbResult.b.toString(16).padStart(2, '0');
             const hexCode = `#${hexR}${hexG}${hexB}`;
-            console.log(hexCode)
+            //console.log(hexCode)
             pixel.color = pixelColorPick(pixel, hexCode)}
         for (var i = 0; i < squareCoords.length; i++) {
             var coord = squareCoords[i];
@@ -2946,6 +2957,7 @@ elements.run_some_code = {
     color: "#68b2cf",
     category: "tools",
     canPlace: false,
+    tool: function(){},
     onSelect: function(){
         let code = prompt("Enter code to run")
         if (code){
@@ -2967,7 +2979,51 @@ elements.insulated_wire = {
                     if (!isEmpty(x,y,true)) {
                         var newPixel = pixelMap[x][y];
                         var con = newPixel.element;
-                        if (con == "insulated_wire") {
+                        if (con == "insulated_wire" || con == "wire_bridge") {
+                        if (1 == 1) { // If random number is less than conductivity
+                            if (!newPixel.charge && !newPixel.chargeCD) {
+                                newPixel.charge = 1;
+                            }
+                        }
+                    }
+                }
+                }
+                pixel.charge -= 0.25;
+                if (pixel.charge <= 0) {
+                    delete pixel.charge;
+                    // pixel.chargeCD = 4;
+                    pixel.chargeCD = Math.round(4 + (4*(1-elements[pixel.element].conduct))) || 4;
+                }
+            }
+            // Lower charge cooldown
+            else if (pixel.chargeCD) {
+                pixel.chargeCD -= 1;
+                if (pixel.chargeCD <= 0) {
+                    delete pixel.chargeCD;
+                    if (elements[pixel.element].colorOn) {
+                        pixel.color = pixelColorPick(pixel);
+                    }
+                }
+            }
+        }
+        doHeat(pixel)
+    }
+}
+elements.wire_bridge = {
+    color: "#461716",
+    category: "machines",
+    conduct: 1,
+    tick: function(pixel){
+        {
+            if (pixel.charge) {
+                // Check each adjacent pixel, if that pixel's charge is false, set it to the same charge
+                for (var i = 0; i < adjacentCoords.length; i++) {
+                    var x = pixel.x+adjacentCoords[i][0];
+                    var y = pixel.y+adjacentCoords[i][1];
+                    if (!isEmpty(x,y,true)) {
+                        var newPixel = pixelMap[x][y];
+                        var con = newPixel.element;
+                        if (con == "insulated_wire" || con == "wire" || con == "wire_bridge") {
                         if (1 == 1) { // If random number is less than conductivity
                             if (!newPixel.charge && !newPixel.chargeCD) {
                                 newPixel.charge = 1;
@@ -3048,7 +3104,7 @@ elements.piston_ray_emitter = {
                         var lx = lcoord[0];
                         var ly = lcoord[1];
                         if (!isEmpty(lx, ly, true)){
-                            tryMove(pixelMap[lx][ly], pCoord[0], pCoord[1])
+                            tryMove(pixelMap[lx][ly], pCoord[0], pCoord[1], null, true)
                         }
                         pCoord[0] = lx;
                         pCoord[1] = ly;
@@ -3061,6 +3117,38 @@ elements.piston_ray_emitter = {
 }
 let pistonStart = 0
 let pistonEnd = 0
+let pistonDistance = 1
+let pistonCooldown = 10
+let pistonRepeat = 1
+let pistonRepeatCooldown = 1
+function pistonEmit(pixel, i){
+    pixel.cooldown = pixel.pistonCooldown
+    pixel.rcooldown = pixel.pistonRepeatCooldown
+                    var dir = [0-squareCoords[i][0], 0-squareCoords[i][1]]
+                    var startx = pixel.x+(dir[0]*(pixel.pistonStart+1))
+                    var starty = pixel.y+(dir[1]*(pixel.pistonStart+1))
+                    var magnitude = pixel.pistonEnd
+                    var endx = startx+(magnitude*dir[0])
+                    var endy = starty+(magnitude*dir[1])
+                 //   console.log("Direction seems to be " + dir)
+                 var jcoords
+                 if (pixel.pullOrPush == 1){jcoords = lineCoords(startx, starty, endx, endy, 1)}
+                 else {jcoords = lineCoords(endx, endy, startx, starty, 1)}
+                 
+                 
+                 //   console.log(startx + " is the starting x, " + starty + " is the starting y, " + endx + " is the ending x, " + endy + " is the ending y. Result is " + jcoords)
+                    let pCoord = jcoords[0]
+                    for (var j = 0; j < jcoords.length; j++) {
+                        var lcoord = jcoords[j];
+                        var lx = lcoord[0];
+                        var ly = lcoord[1];
+                        if (!isEmpty(lx, ly, true)){
+                            tryMove(pixelMap[lx][ly], pCoord[0], pCoord[1], null, true)
+                        }
+                        pCoord[0] = lx;
+                        pCoord[1] = ly;
+                    }
+}
 elements.specific_piston_ray_emitter = {
     color: "#517597",
     behavior: behaviors.WALL,
@@ -3074,14 +3162,35 @@ elements.specific_piston_ray_emitter = {
         pistonStart = ans2
         var ans3 = parseInt(prompt("How offset should the end of the push/pulling be?", "20"))
         pistonEnd = ans3
+        var ans4 = parseInt(prompt("How far should it push the pixels each charge?", "1"))
+        pistonDistance = ans4
+        var ans5 = parseInt(prompt("How many ticks should it wait to be charged again?", "6"))
+        pistonCooldown = ans5
+        var ans6 = parseInt(prompt("How many times should it repeat the push/pulling?", "1"))
+        pistonRepeat = ans6
+        if (pistonRepeat != 1){
+            var ans7 = parseInt(prompt("How many ticks should it wait between repeats?", "1"))
+            pistonRepeatCooldown = ans7
+        }
     },
     tick: function(pixel){
         if (pixelTicks == pixel.start){
             pixel.pullOrPush = pullOrPush
             pixel.pistonStart = pistonStart
             pixel.pistonEnd = pistonEnd
+            pixel.pistonDistance = pistonDistance
+            pixel.pistonCooldown = pistonCooldown
+            pixel.pistonRepeat = pistonRepeat
+            pixel.pistonRepeatCooldown = pistonRepeatCooldown
+        }
+        if (!pixel.pistonRepeat){
+            pixel.pistonRepeat = pistonRepeat
+            pixel.pistonRepeatCooldown = pistonRepeatCooldown
         }
         if (!pixel.cooldown){pixel.cooldown = 0}
+        if (!pixel.rcooldown){pixel.rcooldown = 0}
+        if (!pixel.repeatAmounts){pixel.repeatAmounts = 0}
+        if (!pixel.fakei){pixel.fakei = 0}
         if (pixel.cooldown < 1){
         for (var i = 0; i < adjacentCoords.length; i++) {
             var coord = squareCoords[i];
@@ -3089,33 +3198,526 @@ elements.specific_piston_ray_emitter = {
             var y = pixel.y+coord[1];
             if (!isEmpty(x,y, true)){
                 if (pixelMap[x][y].charge && (pixelMap[x][y].element == "wire" || pixelMap[x][y].element == "insulated_wire")){
-                    pixel.cooldown = 6
-                    var dir = [0-squareCoords[i][0], 0-squareCoords[i][1]]
-                    var startx = pixel.x+(dir[0]*pixel.pistonStart)
-                    var starty = pixel.y+(dir[1]*pixel.pistonStart)
-                    var magnitude = pixel.pistonEnd
-                    var endx = startx+(magnitude*dir[0])
-                    var endy = starty+(magnitude*dir[1])
-                 //   console.log("Direction seems to be " + dir)
-                 var jcoords
-                 if (pixel.pullOrPush == 1){jcoords = lineCoords(startx, starty, endx, endy, 1)}
-                 else {jcoords = lineCoords(endx, endy, startx, starty, 1)}
-                 
-                 //   console.log(startx + " is the starting x, " + starty + " is the starting y, " + endx + " is the ending x, " + endy + " is the ending y. Result is " + jcoords)
-                    let pCoord = jcoords[0]
-                    for (var j = 0; j < jcoords.length; j++) {
-                        var lcoord = jcoords[j];
-                        var lx = lcoord[0];
-                        var ly = lcoord[1];
-                        if (!isEmpty(lx, ly, true)){
-                            tryMove(pixelMap[lx][ly], pCoord[0], pCoord[1])
-                        }
-                        pCoord[0] = lx;
-                        pCoord[1] = ly;
+                    pixel.repeatAmounts = pixel.pistonRepeat
+                    pixel.fakei = i
+                    for (let r = 0; r < pixel.pistonDistance; r++){
+                        pistonEmit(pixel, i);
+                    }
+                    pixel.repeatAmounts--
+                }
+            }
+        }} else {pixel.cooldown --}
+        if (pixel.rcooldown < 1 && pixel.repeatAmounts > 0){
+            for (let r = 0; r < pixel.pistonDistance; r++){
+                pistonEmit(pixel, pixel.fakei);
+            }
+            pixel.repeatAmounts--
+        } else {pixel.rcooldown --}
+    },
+    insulate: true,
+}
+if (!elements.molten_gallium.reactions){elements.gallium.reactions = {}}
+elements.molten_gallium.reactions.nitrogen = {elem1: "gallium_nitride", elem2: null, chance: 0.02, tempMin: 1200}
+elements.gallium_nitride = {
+    color: "#dedf9d",
+    behavior: behaviors.WALL,
+    colorOn: "#493ee9",
+    category: "solids",
+    tempHigh: 1650,
+    density: 6100,
+    stateHigh: "molten_gallium_nitride",
+    state: "solid",
+    conduct: 0.84,
+    tick: function(pixel){
+        if (pixel.charge){
+            for (var i = 0; i < adjacentCoords.length; i++) {
+                var coord = squareCoords[i];
+                var x = pixel.x+coord[0];
+                var y = pixel.y+coord[1];
+                if (isEmpty(x,y, true)){
+                    if (Math.random() < 0.3){
+                        createPixel("light", x, y)
+                        pixelMap[x][y].color = pixelColorPick(pixelMap[x][y], "#493ee9")
                     }
                 }
             }
-        }} else {pixel.cooldown -= 1}
+        }
     },
-    insulate: true,
+    movable: false,
+}
+elements.molten_gallium_nitride = {
+    color: ["#d29d70", "#cf8e5e", "#cd7e4e", "#ca6d40", "#c75b33"],
+    behavior: behaviors.MOLTEN,
+    category: "states",
+    hidden: true,
+    state: "liquid",
+    tempLow: 1640,
+    stateLow: "gallium_nitride",
+    density: 6050,
+}
+elements.gallium_phosphide = {
+    color: "#be6008",
+    behavior: behaviors.WALL,
+    colorOn: "#00ff15",
+    category: "solids",
+    tempHigh: 1457,
+    density: 4138,
+    stateHigh: "molten_gallium_phosphide",
+    state: "solid",
+    conduct: 0.84,
+    tick: function(pixel){
+        if (pixel.charge){
+            for (var i = 0; i < adjacentCoords.length; i++) {
+                var coord = squareCoords[i];
+                var x = pixel.x+coord[0];
+                var y = pixel.y+coord[1];
+                if (isEmpty(x,y, true)){
+                    if (Math.random() < 0.3){
+                        createPixel("light", x, y)
+                        pixelMap[x][y].color = pixelColorPick(pixelMap[x][y], "#00ff15")
+                    }
+                }
+            }
+        }
+    },
+    movable: false,
+}
+elements.molten_gallium_phosphide = {
+    color: ["#a36936", "#cf8e5e", "#9b4c1c", "#ca6d40", "#a13d19"],
+    behavior: behaviors.MOLTEN,
+    category: "states",
+    hidden: true,
+    state: "liquid",
+    tempLow: 1447,
+    stateLow: "gallium_phosphide",
+    density: 4100,
+}
+/*
+let funcRadius = 10
+let functionScope = "pixel"
+let funcFunction = "function(){console.log('Hello World')}"
+let functionStorage = function(){}
+elements.function_machine = {
+    color: "#56999e",
+    behavior: behaviors.WALL,
+    category: "machines",
+    state: "solid",
+    onSelect: function(){
+        let ans1 = prompt("What radius should the function be executed at? (Ignore if you plan on making it a global one.", funcRadius||10)
+        funcRadius = parseInt(ans1)
+        let ans2 = prompt("What scope should the function be executed in? Type \"global\" or \"pixel\" (without the quotes of course.)", functionScope||"pixel")
+        if (ans2 == "global"){functionScope = "global"} else {functionScope = "pixel"}
+        let ans3 = prompt("Type the entire function. Example: function(pixel){pixel.temp = 1000}}", funcFunction||"function(){console.log('Hello World')}")
+        funcFunction = ans3
+    },
+    tick: function(pixel){
+        if (pixelTicks == pixel.start){
+            pixel.radius = funcRadius
+            pixel.scope = functionScope
+            pixel.function = funcFunction
+        }
+        if (pixel.scope == "global"){
+            eval("functionStorage = "+pixel.function)
+            functionStorage()
+        } else {
+            var circlec = circleCoords(pixel.x, pixel.y, pixel.radius)
+            for (var i = 0; i < circlec.length; i++){
+                var coord = circlec[i]
+                var x = coord.x
+                var y = coord.y
+                if (!isEmpty(x,y,true)){
+                    eval("functionStorage = "+pixel.function)
+                    functionStorage(pixelMap[x][y])
+                }
+            }
+        }
+    },
+    excludeRandom: true,
+}
+    */
+   /*
+elements.galvanized_steel = {
+    color: "#4c585f",
+    behavior: behaviors.WALL,
+    tempHigh: 1455.5,
+    category: "solids",
+    density: 7850,
+    conduct: 0.42,
+    hardness: 0.8,
+    tick: function(pixel){
+        for (var i = 0; i < adjacentCoords.length; i++) {
+            var coord = squareCoords[i];
+            var x = pixel.x+coord[0];
+            var y = pixel.y+coord[1];
+            if (!isEmpty(x,y, true)){
+                let otherPixel = pixelMap[x][y]
+                if (otherPixel.element == "molten_zinc"){
+                    if (Math.random() < 0.005){
+                        deletePixel(x, y)
+                        if (!pixel.absorbedZinc){pixel.absorbedZinc = 0}
+                        pixel.absorbedZinc ++
+                    }
+                } else if (otherPixel.element == "steel"){
+                    if (pixel.absorbedZinc && Math.random() < 0.02){
+                        changePixel(otherPixel, "galvanized_steel")
+                        pixel.absorbedZinc --
+                    }
+                }
+                else if (otherPixel.element == "galvanized_steel"){
+                    if (!otherPixel.absorbedZinc){otherPixel.absorbedZinc = 0}
+                    if (pixel.absorbedZinc > otherPixel.absorbedZinc && Math.random() < 0.1){
+                        otherPixel.absorbedZinc ++
+                        pixel.absorbedZinc --
+                    }
+                }
+            }
+        }
+    },
+    movable: false
+}
+if (!eLists.metals) { eLists.metals = [] }
+eLists.metals = eLists.metals.concat(["galvanized_steel"])
+if (!elements.steel.reactions){elements.steel.reactions = {}}
+elements.steel.reactions.molten_zinc = {elem1: "galvanized_steel", chance: 0.035}
+if (!elements.molten_zinc.reactions){elements.zinc.reactions = {}}
+elements.molten_zinc.reactions.steel = {elem1: "null", chance: 0.2}
+*/
+elements.super_heat_conductor = {
+    color: "#b66b61",
+    behavior: behaviors.WALL,
+    category: "solids",
+    density: 10000,
+    tick: function(pixel){
+        for (let j = 0; j <= 10; j++){
+            for (var i = 0; i < adjacentCoords.length; i++) {
+                var x = pixel.x+adjacentCoords[i][0];
+                var y = pixel.y+adjacentCoords[i][1];
+                if (!isEmpty(x,y,true)) {
+                    var newPixel = pixelMap[x][y];
+                    // Skip if both temperatures are the same
+                    if (pixel.temp == newPixel.temp || elements[newPixel.element].insulate == true) {
+                        continue;
+                    }
+                    // Set both pixel temperatures to their average
+                    var avg = (pixel.temp + newPixel.temp)/2;
+                    pixel.temp = avg;
+                    newPixel.temp = avg;
+                    pixelTempCheck(pixel);
+                    pixelTempCheck(newPixel);
+                }
+            }
+        }
+    }
+}
+runEveryTick(function() {
+    // run any code after pixels are simulated per tick
+    var heatpixels = currentPixels.filter(function(pixelToCheck) {
+        if (pixelToCheck.element == "global_heat_conductor"){
+            return true;
+        }
+    })
+    for (var i = 0; i < heatpixels.length; i++) {
+        var newPixel = heatpixels[i];
+        var randomPixel = heatpixels[Math.floor(Math.random()*heatpixels.length)];
+        var avg = (randomPixel.temp + newPixel.temp)/2;
+        randomPixel.temp = avg;
+        newPixel.temp = avg;
+    }
+})
+elements.global_heat_conductor = {
+    color: "#55251e",
+    behavior: behaviors.WALL,
+    category: "solids",
+    density: 10000,
+}
+let latticeElem = "wood"
+elements.lattice_brush = {
+    color: elements.grid_brush.color,
+    behavior: behaviors.WALL,
+    category: "special",
+    onSelect: function(){
+        let ans1 = prompt("Enter the element you want to use for the lattice", latticeElem||"wood")
+        latticeElem = mostSimilarElement(ans1)
+    },
+    tick: function(pixel){
+        let modx = pixel.x%2
+        let mody = pixel.y%2
+        let valid = {
+            1: 0,
+            0: 1
+        }
+        if (valid[modx] == mody){
+            changePixel(pixel, latticeElem)
+        }else {
+            deletePixel(pixel.x, pixel.y)
+        }
+    }
+}
+elements.spaced_lattice_brush = {
+    color: elements.grid_brush.color,
+    behavior: behaviors.WALL,
+    category: "special",
+    onSelect: function(){
+        let ans1 = prompt("Enter the element you want to use for the lattice", latticeElem||"wood")
+        latticeElem = mostSimilarElement(ans1)
+    },
+    tick: function(pixel){
+        let modx = pixel.x%5
+        let mody = pixel.y%5
+        let valid = {
+            1: 3,
+            2: 0,
+            3: 2,
+            4: 4,
+            0: 1
+        }
+        if (valid[modx] == mody){
+            changePixel(pixel, latticeElem)
+        }else {
+            deletePixel(pixel.x, pixel.y)
+        }
+    }
+}
+let outlinerElem = "wood"
+elements.outer_outliner = {
+    color: elements.inner_outliner.color,
+    behavior: behaviors.WALL,
+    category: "special",
+    onSelect: function(){
+        let ans1 = prompt("Enter the element you want to use for the outliner. The outliner will ignore pixels of this type.", outlinerElem||"wood")
+        outlinerElem = mostSimilarElement(ans1)
+    },
+    tick: function(pixel){
+        // this just checks if theres any neighboring coord non-outliner elem pixels. yuh that simple
+        for (var i = 0; i < squareCoords.length; i++) {
+            var x = pixel.x+squareCoords[i][0];
+            var y = pixel.y+squareCoords[i][1];
+            if (!isEmpty(x,y,true)) {
+                var newPixel = pixelMap[x][y];
+                if (newPixel.element != outlinerElem && newPixel.element!= "outer_outliner") {
+                    deletePixel(pixel.x, pixel.y)
+                    createPixel(outlinerElem, pixel.x, pixel.y)
+                    return;
+                }
+            }
+        }
+        deletePixel(pixel.x, pixel.y)
+    }
+}
+function highestValueObjectKey(object){
+    let max = -Infinity
+    for (var key in object){
+        if (object[key] > (object[max]||-Infinity)){
+            max = key
+        }
+    }
+    return max
+}
+function sumOfObjectValues(object){
+    let sum = 0
+    for (var key in object){
+        sum += object[key]
+    }
+    return sum
+}
+neighborRandomChance = {
+    1: 0.015,
+    2: 0.03,
+    3: 0.06,
+    4: 0.12,
+    5: 0.2,
+    6: 0.5,
+    7: 0.8,
+    8: 1
+}
+elements.colored_filler = {
+    color: elements.rainbow.color,
+    behavior: behaviors.WALL,
+    category: "special",
+    customColor: true,
+    properties: {
+        "initalized": false,
+    },
+    tick: function(pixel){
+        let fillerNeighbors = {}
+        for (var i = 0; i < adjacentCoords.length; i++) {
+            var x = pixel.x+adjacentCoords[i][0];
+            var y = pixel.y+adjacentCoords[i][1];
+            if (isEmpty(x,y) && pixel.initalized) {
+                createPixel("colored_filler", x, y)
+                pixelMap[x][y].color = pixel.color;
+                pixelMap[x][y].initalized = true
+            }
+        }
+        for (var i = 0; i < squareCoords.length; i++) {
+            var x = pixel.x+squareCoords[i][0];
+            var y = pixel.y+squareCoords[i][1];
+            if (!isEmpty(x, y, true)){
+                var otherPixel = pixelMap[x][y];
+                if (otherPixel.element == "colored_filler" && otherPixel.color != pixel.color){
+                    fillerNeighbors[otherPixel.color] = (fillerNeighbors[otherPixel.color]||0)+1;
+                }
+            }
+        }
+        if(Object.keys(fillerNeighbors).length > 0){
+            let mostSeenColor = highestValueObjectKey(fillerNeighbors)
+            let opposingCount = sumOfObjectValues(fillerNeighbors)
+            if (Math.random() < neighborRandomChance[opposingCount]){
+                pixel.color = mostSeenColor;
+            }
+        }
+    },
+    renderer: function(pixel, ctx){
+        if (!pixel.initalized){
+            var rgb = hexToRGB(currentColor);
+            pixel.color = "rgb("+rgb.r+","+rgb.g+","+rgb.b+")";
+            pixel.initalized = true;
+        }
+        if (pixel.color != "monochrome" && pixel.color != "rainbow"){
+            drawSquare(ctx, pixel.color, pixel.x, pixel.y);
+        } else {
+            if (pixel.color == "monochrome"){
+                drawSquare(ctx, "hsl(0, 0%, " + 100*Math.abs(Math.asin(Math.sin(pixelTicks/30)))/(0.5*Math.PI) + "%)", pixel.x, pixel.y);
+            } else if (pixel.color == "rainbow"){
+                drawSquare(ctx, "hsl(" + ((pixelTicks%60)/60)*360 + ", 100%, 50%)", pixel.x, pixel.y);
+            }
+        }
+    }
+}
+let copycatfillerElem = "sand"
+elements.copycat_filler = {
+    color: elements.random.color,
+    behavior:behaviors.WALL,
+    category: "special",
+    onSelect: function(){
+        let ans1 = prompt("Enter the element you want to use for the copycat filler", copycatfillerElem||"sand")
+        copycatfillerElem = mostSimilarElement(ans1)
+    },
+    tick: function(pixel){
+        let fillerNeighbors = {}
+        if (!pixel.copycatElement){
+            pixel.copycatElement = copycatfillerElem
+        }
+        if (!pixel.rSeed){
+            pixel.rSeed = [Math.random(), Math.random(), Math.random(), Math.random()]
+        }
+        for (var i = 0; i < adjacentCoords.length; i++) {
+            var x = pixel.x+adjacentCoords[i][0];
+            var y = pixel.y+adjacentCoords[i][1];
+            if (isEmpty(x,y)) {
+                createPixel("copycat_filler", x, y)
+                pixelMap[x][y].copycatElement = pixel.copycatElement
+            }
+        }
+        for (var i = 0; i < squareCoords.length; i++) {
+            var x = pixel.x+squareCoords[i][0];
+            var y = pixel.y+squareCoords[i][1];
+            if (!isEmpty(x, y, true)){
+                var otherPixel = pixelMap[x][y];
+                if (otherPixel.element == "copycat_filler" && otherPixel.copycatElement != pixel.copycatElement){
+                    fillerNeighbors[otherPixel.copycatElement] = (fillerNeighbors[otherPixel.copycatElement]||0)+1;
+                }
+            }
+        }
+        if(Object.keys(fillerNeighbors).length > 0){
+            let mostSeenColor = highestValueObjectKey(fillerNeighbors)
+            let opposingCount = sumOfObjectValues(fillerNeighbors)
+            if (Math.random() < neighborRandomChance[opposingCount]){
+                pixel.copycatElement = mostSeenColor;
+            }
+        }
+    },
+    renderer: function(pixel, ctx){
+        if (!pixel.copycatElement){pixel.copycatElement = copycatfillerElem}
+        if (!pixel.rSeed){pixel.rSeed = [Math.random(), Math.random(), Math.random(), Math.random()]}
+        if (typeof elements[pixel.copycatElement].color == "object"){
+            let selectedColor = elements[pixel.copycatElement].color[Math.floor(pixel.rSeed[1]*elements[pixel.copycatElement].color.length)]
+            let rgb = {
+                r: parseInt(selectedColor.match(/\d+/g)[0]),
+                g: parseInt(selectedColor.match(/\d+/g)[1]),
+                b: parseInt(selectedColor.match(/\d+/g)[2])
+            }
+            for (let c in rgb){
+                rgb[c] += Math.floor(pixel.rSeed[0] * (pixel.rSeed[2] > 0.5 ? -1 : 1) * pixel.rSeed[3] * 15);
+                rgb[c] = Math.max(0, Math.min(255, rgb[c]));
+            }
+            if (elements[pixel.copycatElement].glow || elements[pixel.copycatElement].isGas){
+                drawPlus(ctx, "rgb("+rgb.r+","+rgb.g+","+rgb.b+")", pixel.x, pixel.y, 1);
+            } else {
+                drawSquare(ctx, "rgb("+rgb.r+","+rgb.g+","+rgb.b+")", pixel.x, pixel.y);
+            }
+        } else {
+            let rgb = {
+                r: parseInt(elements[pixel.copycatElement].color.match(/\d+/g)[0]),
+                g: parseInt(elements[pixel.copycatElement].color.match(/\d+/g)[1]),
+                b: parseInt(elements[pixel.copycatElement].color.match(/\d+/g)[2])
+            }
+            for (let c in rgb){
+                rgb[c] += Math.floor(pixel.rSeed[0] * (pixel.rSeed[2] > 0.5 ? -1 : 1) * pixel.rSeed[3] * 15);
+                rgb[c] = Math.max(0, Math.min(255, rgb[c]));
+            }
+            if (elements[pixel.copycatElement].glow || elements[pixel.copycatElement].isGas){
+                drawPlus(ctx, "rgb("+rgb.r+","+rgb.g+","+rgb.b+")", pixel.x, pixel.y, 1);
+            } else {
+                drawSquare(ctx, "rgb("+rgb.r+","+rgb.g+","+rgb.b+")", pixel.x, pixel.y);
+            }
+        }
+    }
+}
+/*
+top left: canvasCoord(x), canvasCoord(y)
+top right: canvasCoord(x)+pixelSize, canvasCoord(y)
+bottom left: canvasCoord(x), canvasCoord(y)+pixelSize
+bottom right: canvasCoord(x)+pixelSize, canvasCoord(y)+pixelSize
+*/
+adjacentSidesToCanvas = function(x, y, px, py){
+    if (x == 0 && y == -1){
+        return [canvasCoord(px)+(0.5*pixelSize), canvasCoord(py)]
+    }
+    else if (x == 0 && y == 1){
+        return [canvasCoord(px)+(0.5*pixelSize), canvasCoord(py)+pixelSize]
+    }
+    else if  (x == -1 && y == 0){
+        return [canvasCoord(px), canvasCoord(py)+(0.5*pixelSize)]
+    }
+    else if  (x == 1 && y == 0){
+        return [canvasCoord(px)+pixelSize, canvasCoord(py)+(0.5*pixelSize)]
+    }
+}
+drawRectangle = function(ctx, color, x, y, width, height, xoffset, yoffset){
+    ctx.fillStyle = color;
+    ctx.fillRect(canvasCoord(x+xoffset), canvasCoord(y+yoffset), pixelSize*width, pixelSize*height)
+}
+elements.thin_pixel = {
+    color: "#747474",
+    behavior: behaviors.WALL,
+    category: "special",
+    renderer: function(pixel, ctx){
+        let differentAdjacent = [];
+                for (let i = 0; i < adjacentCoords.length; i++) {
+                    let x = adjacentCoords[i][0] + pixel.x;
+                    let y = adjacentCoords[i][1] + pixel.y;
+                    if (!isEmpty(x, y, true) && pixelMap[x][y].element == "thin_pixel") {
+                        differentAdjacent.push(adjacentCoords[i]);
+                    }
+                }
+                ctx.globalAlpha = 1
+                differentAdjacent.forEach(adj => {
+                    let canvasadjacentCoords = adjacentSidesToCanvas(adj[0], adj[1], pixel.x, pixel.y);
+                   // if (!canvasadjacentCoords){
+                  //      console.log(adj)
+                  //      return;
+                  //  }
+                    //console.log(canvasadjacentCoords);
+                    ctx.beginPath();
+                    ctx.moveTo(canvasCoord(pixel.x)+(0.5*pixelSize), canvasCoord(pixel.y)+(0.5*pixelSize));
+                    ctx.lineTo(canvasadjacentCoords[0], canvasadjacentCoords[1]);
+                    ctx.strokeStyle = pixel.color;
+                    if (pixelSize*0.24>=2){ctx.lineWidth = pixelSize*0.24}else{ctx.lineWidth = 2}
+                    ctx.stroke();
+                    //console.log("line")
+                });
+                ctx.fillStyle = pixel.color;
+                ctx.fillRect(canvasCoord(pixel.x+0.38), canvasCoord(pixel.y+0.38), pixelSize*0.24, pixelSize*0.24);
+    }
 }
